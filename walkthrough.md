@@ -34,3 +34,30 @@ Dokumen ini menjelaskan langkah-langkah yang telah diimplementasikan pada branch
 - Jalankan sinkronisasi database dengan `bun run db:push`.
 - Jalankan server `bun run dev`.
 - Tes registrasi user menggunakan `curl` atau aplikasi seperti Postman/Insomnia.
+
+---
+
+# Walkthrough: Implementasi Login User & Sesi (Issue #6)
+
+## 1. Perubahan Skema Database
+**File:** `src/db/schema.ts`
+- Menambahkan tabel `sessions` dengan field `id`, `token`, `user_id` (sebagai foreign key ke tabel `users`), dan `createdAt`.
+- Tipe data `user_id` diatur sebagai `bigint` unsigned agar sesuai dengan tipe auto-increment pada Drizzle MySQL.
+
+## 2. Pembuatan Layer Service
+**File:** `src/services/users-service.ts`
+- Menambahkan metode `login(input)` pada `UserService`.
+- Pengecekan apakah user berdasarkan email tersedia, jika tidak throw `"Email atau password salah"`.
+- Melakukan verifikasi hash password menggunakan `Bun.password.verify`.
+- Generate UUID v4 (token) menggunakan `crypto.randomUUID()`.
+- Insert token ke tabel `sessions` lalu me-return token tersebut.
+
+## 3. Pembuatan Layer Route
+**File:** `src/routes/users-route.ts`
+- Menambahkan endpoint `POST /login` di router `Elysia`.
+- Memvalidasi request body: `email` dan `password`.
+- Menangani respons dengan mengembalikan token sesi (200) atau error `"Email atau password salah"` (400).
+
+## 4. Menjalankan & Verifikasi
+- Sinkronisasi database menggunakan `bun run db:push` (untuk tabel sessions baru).
+- Menguji API dengan `curl` ke endpoint `http://localhost:3000/api/users/login`.
